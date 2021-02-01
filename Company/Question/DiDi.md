@@ -1304,5 +1304,44 @@ UDP协议：是无连接的，不可靠的传输协议。采用UDP进行通信�
 
 
 
+###### 69.mybatis底层
 
+动态代理
 
+自定义JDK动态代理之投鞭断流实现自动映射器Mapper
+
+![img](img/20180911105427832)
+
+###### 70.jdk为什么不能实现类的动态代理？
+
+单继承
+
+###### 80.常用的设计模式
+
+https://www.cnblogs.com/xiaofengwang/p/11255678.html
+
+###### 81.B+树如何实现范围查询？
+
+指针是双向的，排序是排好的
+
+###### 82.synchronized与Lock的区别
+
+1.首先synchronized是java内置关键字，在jvm层面，Lock是个java类；
+
+2.synchronized无法判断是否获取锁的状态，Lock可以判断是否获取到锁（tryLock，lockInterruptibly）；
+
+3.synchronized会自动释放锁(a 线程执行完同步代码会释放锁 ；b 线程执行过程中发生异常会释放锁)，Lock需在finally中手工释放锁（unlock()方法释放锁），否则容易造成线程死锁；
+
+4.用synchronized关键字的两个线程1和线程2，如果当前线程1获得锁，线程2线程等待。如果线程1阻塞，线程2则会一直等待下去，而Lock锁就不一定会等待下去，如果尝试获取不到锁，线程可以不用一直等待就结束了；
+
+5.synchronized的锁可重入、不可中断、非公平，而Lock锁可重入、可判断（中断）、可公平（两者皆可）
+
+6.Lock锁适合大量同步的代码的同步问题，synchronized锁适合代码少量的同步问题。
+
+###### 83.乐观锁、悲观锁
+
+https://www.jianshu.com/p/d2ac26ca6525
+
+###### 84.线程的几种状态
+
+![image-20210201160740495](img/image-20210201160740495.png)
