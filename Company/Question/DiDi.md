@@ -1431,7 +1431,39 @@ JVM的类加载机制主要有如下3种。
 
 https://blog.csdn.net/m0_38075425/article/details/81627349
 
+###### 88.**二叉树的实际应用**
 
+二叉查找树用于对消费额与积分规则的计算。
+
+排序
+
+数据库索引
+
+数据管理
+
+哈夫曼编码:数据压缩
+
+海量数据并发查询，二叉树复杂度是O(K+LgN)。二叉排序树就既有链表的好处，也有数组的好处， 在处理大批量的动态的数据是比较有用。
+
+
+
+###### 89.**robbitMq作用（处理异步请求）**
+
+这其实和线程竞争锁很像，rocketMQ的解决办法也和锁竞争的道理很像，看具体实现：
+
+1、broker这边，请求过来，如果有新消息返回，在consumer这边，异步请求的回调函数pullCallback中，判断pullResult不为null，那么把消息存到processQueue中之后，马上发起下一个请求。
+
+2、如果broker没有获取到新消息，并不会马上返回pullRequest（consumer那边的发送pullRequest的请求本来就是异步的，不用担心等待的问题），而是会在suspendPullRequest方法中，把当前的请求信息（主要是offset，group，topic，requestId这几个值）放到PullRequestHoldService.pullRequestTable中。而在ReputMessageService的doReput方法会每隔一毫秒扫描commitLog，如果有新消息，会建立索引，并同时判断之前有没有pulRequest在等待这个消息，如果有--->messageArrivingListener.arriving--->pullRequestHoldService.notifyMessageArriving--->mpr = this.pullRequestTable.get(key)--->requestList = mpr.cloneListAndClear() 把刚才存进去的所有pullRequest取出来，返回请求，这样就避免了不停的轮询。
+
+**这里面会出现的异常情况：**
+
+先看消费者这边，如果长时间没有订阅的消息到达broker---这是绝大多数的情况，那么消费者这边的responseTable中存的responseFuture就一直得不到响应。实际上会有个定时任务扫描responseTable，代码逻辑：nettyRemotingClient.start--->NettyRemotingClient.this.scanResponseTable()，定期（默认间隔30秒）取出过期(30秒 + 1秒)的responseFuture，执行callback的operationComplete方法，而pullRequest的operationComplete会判断responseFuture的responseCommand属性为不为null，没有得到响应的话是为null的，那么会进入else中pullCallback.onException，点进去看，是把pullRequest取出再放入队列中一次（其实这里也是重复消费的一个因素）。
+
+还有的情况就是某次pullRequest的请求已经发出，但是broker并没有收到而是在网络中丢掉了，或者说broker的响应消息没有成功到达consumer，这两种情况和上面说的一样，会导致过段时间再扫描，再拉取，只不过就是broker有消息到达，不能及时响应consumer，而是只能响应接下来的扫描提交的第二次消息，这样会影响时效（可以把上面说的扫描的间隔由30秒降低为3秒），不过好在这个订阅的事件不会中断。
+
+还有个问题，broker这里suspendPullRequest暂时扣下来的pullRequest如果一直没有消息到来去唤醒，那么consumer那边到期了就会再发一次请求，这样broker这边的pullRequest就会越积越多。对于这个问题broker这边也有定时任务检测，过期了就模拟消息到来唤醒，这次如果不成功获取消息，不再suspend，而是返回noMessage。具体代码逻辑：PullRequestHoldService是一个ServiceThread的子类，brokerController那里会start，run方法里面是上次提到的重写的countDownLatch循环wait5秒或者1秒(具体看配置文件中longPollingEnable的值)，其实也就是个定时的周期任务，checkHoldRequest--->notifyMessageArriving--->executeRequestWhenWakeup也就是发现过期了(suspendTimestamp + timeoutMillis：CONSUMER_TIMEOUT_MILLIS_WHEN_SUSPEND的值，默认30秒)，模拟消息到来唤醒的过程，注意，唤醒之后的PullMessageProcessor.this.processRequest方法中的参数brokerAllowSuspend传入的是false，所以即使再获取不到，也会直接给出nomesage的响应而不是suspend了
+
+90.
 
 
 

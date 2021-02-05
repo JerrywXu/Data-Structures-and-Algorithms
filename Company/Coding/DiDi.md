@@ -91,37 +91,17 @@ int binarySearch(int[] nums int target){
 # 3.反转链表。
 
 ```java
-public static class Node {
-	public int value;
-	public Node next;
-
-	public Node(int data) {
-		this.value = data;
-	}
-}
-//1.递归
-public Node reverse(Node head) {
-    if (head == null || head.next == null)
-        return head;
-    Node temp = head.next;
-    Node newHead = reverse(head.next);
-    temp.next = head;
-    head.next = null;
-    return newHead;
-}
-
-//2.遍历
-public static Node reverseList(Node node) {
-	Node pre = null;
-	Node next = null;
-	while (node != null) {
-		next = node.next;
-		node.next = pre;
-		pre = node;
-		node = next;
-	}
-	return pre;
-}    
+ public ListNode reverseList(ListNode head) {
+        ListNode prev = null;
+        ListNode curr = head;
+        while (curr != null) {
+            ListNode next = curr.next;
+            curr.next = prev;//改变指针的指向
+            prev = curr; //把curr的值赋给prev
+            curr = next;
+        }
+        return prev;
+    }
 ```
 
 
