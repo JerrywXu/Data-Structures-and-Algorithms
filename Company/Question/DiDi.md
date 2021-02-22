@@ -1463,7 +1463,15 @@ https://blog.csdn.net/m0_38075425/article/details/81627349
 
 还有个问题，broker这里suspendPullRequest暂时扣下来的pullRequest如果一直没有消息到来去唤醒，那么consumer那边到期了就会再发一次请求，这样broker这边的pullRequest就会越积越多。对于这个问题broker这边也有定时任务检测，过期了就模拟消息到来唤醒，这次如果不成功获取消息，不再suspend，而是返回noMessage。具体代码逻辑：PullRequestHoldService是一个ServiceThread的子类，brokerController那里会start，run方法里面是上次提到的重写的countDownLatch循环wait5秒或者1秒(具体看配置文件中longPollingEnable的值)，其实也就是个定时的周期任务，checkHoldRequest--->notifyMessageArriving--->executeRequestWhenWakeup也就是发现过期了(suspendTimestamp + timeoutMillis：CONSUMER_TIMEOUT_MILLIS_WHEN_SUSPEND的值，默认30秒)，模拟消息到来唤醒的过程，注意，唤醒之后的PullMessageProcessor.this.processRequest方法中的参数brokerAllowSuspend传入的是false，所以即使再获取不到，也会直接给出nomesage的响应而不是suspend了
 
-90.
+###### 90.hashmap put的流程
+
+1、`hash(key)`，取key的hashcode进行高位运算，返回hash值
+2、如果hash数组为空，直接`resize()`
+3、对hash进行取模运算计算，得到key-value在数组中的存储位置i
+（1）如果`table[i] == null`，直接插入`Node<key,value>`
+（2）如果`table[i] != null`，判断是否为红黑树`p instanceof TreeNode`。
+（3）如果是红黑树，则判断TreeNode是否已存在，如果存在则直接返回oldnode并更新；不存在则直接插入红黑树，`++size`，超出threshold容量就扩容
+（4）如果是链表，则判断Node是否已存在，如果存在则直接返回oldnode并更新；不存在则直接插入链表尾部，判断链表长度，如果大于8则转为红黑树存储，`++size`，超出threshold容量就扩容
 
 
 
