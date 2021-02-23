@@ -1473,17 +1473,92 @@ https://blog.csdn.net/m0_38075425/article/details/81627349
 （3）如果是红黑树，则判断TreeNode是否已存在，如果存在则直接返回oldnode并更新；不存在则直接插入红黑树，`++size`，超出threshold容量就扩容
 （4）如果是链表，则判断Node是否已存在，如果存在则直接返回oldnode并更新；不存在则直接插入链表尾部，判断链表长度，如果大于8则转为红黑树存储，`++size`，超出threshold容量就扩容
 
+###### 91.单核CPU使用多线程能否提高效率?
+
+一，如果是CPU密集型作业------不能
+
+      假设一段耗时总共为10s的代码(不涉及io操作),使用单线程执行,只需要10s的时间,当使用多线程执行时,就会涉及到线程的上下文切换,这时耗时肯定会超过10s的,所以这种情况下不能提高效率。
+
+二，如果是IO密集型的作业----能
+
+     同理,一段代码(线程使用CPU执行2s的运算,然后执行3秒的io操作,接下来重复这个操作一次)总耗时10s,其中io操作就会占用6s的时间。
+    
+     使用单线程执行时,串行执行总耗时为10s。
+    
+     现在使用2个线程执行,当线程一执行2s的CPU运算时,线程二也会获得CPU的时间片进行运算。也就是两个线程会并行执行,当然,因为是单核CPU,所以每个线程2s的运算时间是肯定的,执行完CPU的运算的时间(2*2)是需要4s的,假设线程上下文切换的时间为0.5s,然后每个线程等待io操作的时间是一样的(3s),那么执行完这段代码的所需时间(4s+0.5s+3s)也就是7.5秒。这种情况下多线程肯定是能提高效率的。
+    
+    当然,IO操作执行的时间越长,使用多线程就越有效。
+###### 92.float,double为何会损失精度
+
+精度损失产生的原因在于Java的数据存储采用的都是2进制形式，二进制不能准确的表示1/10等分数，只能无限趋近。
+
+0.96
+
+0.97
+
+小数无法用二进制准确表示
+
+java.math.BigDecimal，通过使用BigDecimal
+
+涉及到运算直接用string构造double
+
+###### 93.在雇员表中查找第二高的工资的员工记录SQL语句怎么写
+
+mysql不支持top用法
+
+select salary as secondSalary from Employ order by salary desc limit 1 offset 1
+
+select * from article LIMIT 1 OFFSET 1
+
+###### 94.hashcode equals方法的重写
+
+​       如果只重写了equals方法而没有重写hashCode方法的话，则会违反约定的第二条：相等的对象必须具有相等的散列码（hashCode） 同时对于HashSet和HashMap这些基于散列值（hash）实现的类。HashMap的底层处理机制是以数组的方法保存放入的数据的(Node<K,V>[] table)，其中的关键是数组下标的处理 数组的下标是根据传入的元素hashCode方法的返回值再和特定的值异或决定的。如果该数组位置上已经有放入的值了，且传入的键值相等则不处理，若不相等则覆盖原来的值，如果数组位置没有条目，则插入，并加入到相应的链表中。检查键是否存在也是根据hashCode值来确定的。所以如果不重写hashCode的话可能导致HashSet、HashMap不能正常的运作
+
+###### 95.bit、 byte 、int (-2^31到2^31 – 1)
+
+1B=1字节=8bit（比特）。
+
+int就是4个字节，36bit；在64位的计算机里，int就是8个字节。
+
+###### 96.数据库limit关键字用法
+
+```
+mysql不支持top用法
+mysql里分页一般用limit来实现
+
+1. select* from article LIMIT 1,3
+
+2.select * from article LIMIT 3 OFFSET 1
+
+//上面两种写法都表示取2,3,4三条条数据
+
+SELECT * FROM table LIMIT 95,-1; // 检索记录行 96-last. 
+
+MySql查询前10条数据sql语句为：select * from table_name limit 0,10
 
 
+```
 
+###### 97.重写equals（）方法的原则
 
+对称性：
 
+如果`x.equals（y）`返回是“true”，那么`y.equals（x）`也应该返回是
+“true”。
 
+自反性：
 
+`x.equals（x）`必须返回是“true”。
 
+传递性：
 
+如果`x.equalsly）`返回是“true”，而且`y.equals（z）`返回是“true”，那么`z.equals（x）`也应该返回是“true”。
 
+一致性：
 
+如果`x.equals（y）`返回是“true”，只要x和y内容一直不变，不管重复`x.equals（y）`多少次，返回结果都是“true”。
 
+其他：
 
-
+任何情况下，`x.equals（null）`，永远返回是“false”：
+`x.equals（与x不同类型的对象）`水远返回是“false”。
