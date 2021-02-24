@@ -285,9 +285,25 @@ StringBuffer：线程安全，StringBuilder：线程不安全。因为 StringBuf
 
 ###### 20.JVM中Remember Set是干什么用的，在哪儿用到，什么情况下会进行变更。
 
+ RememberedSet用于可达性分析。
 
+老年代对象引用新生代对象”这种关系，会在引用关系发生时，在新生代边上专门开辟一块空间就记录下来，这就是RememberedSet。所以，“新生代的 GC Roots”+"RememberedSet存储的内容"，才是新生代收集时真正的GC Roots。然后就可以以此为据，在新生代上做可达性分析，进行垃圾回收。
+
+  OopMap记录了栈上本地变量表到堆上的引用关系。
+
+![image-20210224102017679](img/image-20210224102017679.png)
 
 ###### 21.Java的多线程问题，Thread.interrupted和thread.isinterrupted的区别还有线程状态。
+
+https://blog.csdn.net/zxl_LangYa/article/details/82662919?utm_medium=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-4.baidujs&dist_request_id=088a2428-a121-4c3e-a539-b7c2698d28bf&depth_1-utm_source=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-4.baidujs
+
+在java中有以下的3种方法可以终止正在运行的线程：
+
+1. 使用退出标志，使线程正常退出，也就是当run方法完成后才停止；
+2. 就是我们上面所说的使用stop方法强行终止线程，是过期作废的方法，这种方法可以排除不用；
+3. 使用interrupt方法终止线程。
+
+interrupt()只是会设置线程的中断标志位，没有任何其它作用
 
 1）this.interrupted()：测试当前线程是否已经是中断中断状态，执行后进行状态标志清除。
 2）this.isInterrupted()：测试线程Thread对象是否已经是中断状态，但不清除状态标志。
@@ -320,11 +336,138 @@ DelayedWorkQueue 的特点是内部元素并不是按照放入的时间排序，
 
 ###### 23.AQS公平锁和非公平锁的区别，问AQS怎么实现可重入锁。
 
+```java
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.AbstractQueuedSynchronizer;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.Lock;
+
+/**
+ * 用AQS实现的重入锁
+ * @author 张仕宗
+ * @date 2018.11.9
+ */
+public class MyAqsLock implements Lock{
+	//AQS子类的对象，用它来辅助MyAqsLock工作
+	private Sync sync = new Sync();
+	
+	private class Sync extends AbstractQueuedSynchronizer {
+
+		@Override
+		protected boolean tryAcquire(int arg) {
+			//如果第一个线程进来，直接获得锁，并设置当前独占的线程为当前线程
+			int state = this.getState();
+			if(state == 0) { //state为0,说明当前没有线程占用该线程
+				if(this.compareAndSetState(0, arg)) { //判断当前state值，第一个线程进来，立刻设置state为arg
+					this.setExclusiveOwnerThread(Thread.currentThread()); //设置当前独占线程为当前线程
+					return true; //告诉顶级aqs获取锁成功
+				}
+			} else { //如果是第二个线程进来
+				Thread currentThread = Thread.currentThread();//当前进来的线程
+				Thread ownerThread = this.getExclusiveOwnerThread();//已经保存进去的独占式线程
+				if(currentThread == ownerThread) { //判断一下进来的线程和保存进去的线程是同一线程么？如果是，则获取锁成功，如果不是则获取锁失败
+					this.setState(state+arg); //设置state状态
+					return true;
+				}
+			}
+			return false;
+		}
+
+		@Override
+		protected boolean tryRelease(int arg) {
+			//锁的获取和锁的释放是一一对应的,获取过多少次锁就释放多少次锁
+			if(Thread.currentThread() != this.getExclusiveOwnerThread()) {
+				//如果释放锁的不是当前线程，则抛出异常
+				throw new RuntimeException();
+			}
+			int state = this.getState()-arg;
+			//接下来判断state是否已经归零，只有state归零的时候才真正的释放锁
+			if(state == 0) {
+				//state已经归零，做扫尾工作
+				this.setState(0);
+				this.setExclusiveOwnerThread(null);
+				return true;
+			}
+			this.setState(state);
+			return false;
+		}
+		
+		public Condition newCondition() {
+			return new ConditionObject();
+		}
+	}
+
+	/**
+	 * 上锁的方法
+	 */
+	@Override
+	public void lock() {
+		sync.acquire(1);
+	}
+	
+	/**
+	 * 释放锁的方法
+	 */
+	@Override
+	public void unlock() {
+		sync.release(1);
+	}
+	
+	@Override
+	public void lockInterruptibly() throws InterruptedException {
+		sync.acquireInterruptibly(1);
+	}
+
+	@Override
+	public boolean tryLock() {
+		//调用帮助器的tryAcquire方法，测试获取锁一次，不会自旋
+		return sync.tryAcquire(1);
+	}
+
+	@Override
+	public boolean tryLock(long time, TimeUnit unit) throws InterruptedException {
+		//调用帮助器的tryRelease方法，测试释放锁一次，不会子旋
+		return sync.tryRelease(1);
+	}
+
+	@Override
+	public Condition newCondition() {
+		//调用帮助类获取Condition对象
+		return sync.newCondition();
+	}
+}
+
+```
 
 
-###### 24.mysql什么时候触发行锁，什么时候触发表锁？mysql的一致性和CAP的一致性有什么区别？
+
+基于AQS的锁(比如ReentrantLock)原理大体是这样:
+有一个state变量，初始值为0，假设当前线程为A,每当A获取一次锁，status++. 释放一次，status--.锁会记录当前持有的线程。
+当A线程拥有锁的时候，status>0. B线程尝试获取锁的时候会对这个status有一个CAS(0,1)的操作，尝试几次失败后就挂起线程，进入一个等待队列。
+如果A线程恰好释放，--status==0, A线程会去唤醒等待队列中第一个线程，即刚刚进入等待队列的B线程，B线程被唤醒之后回去检查这个status的值，尝试CAS(0,1),而如果这时恰好C线程也尝试去争抢这把锁
+
+非公平锁实现：
+C直接尝试对这个status CAS(0,1)操作，并成功改变了status的值，B线程获取锁失败，再次挂起，这就是非公平锁，B在C之前尝试获取锁，而最终是C抢到了锁。
+公平锁：
+C发现有线程在等待队列，直接将自己进入等待队列并挂起,B获取锁
+
+https://blog.csdn.net/zhang5476499/article/details/83796289
 
 
+
+
+
+###### 24.mysql什么时候触发行锁，什么时候触发表锁？
+
+https://www.cnblogs.com/Marydon20170307/p/14105005.html
+
+<img src="img/image-20210224105654127.png" alt="image-20210224105654127" style="zoom:67%;" />
+
+###### mysql的一致性和CAP的一致性有什么区别？
+
+ACID一致性是有关数据库规则，如果数据表结构定义一个字段值是唯一的，那么一致性系统将解决所有操作中导致这个字段值非唯一性的情况，如果带有一个外键的一行记录被删除，那么其外键相关记录也应该被删除，这就是ACID一致性意思。
+
+CAP理论的一致性是保证同样一个数据在所有不同服务器上的拷贝都是相同的，这是一种逻辑保证，而不是物理，因为光速限制，在不同服务器上这种复制是需要时间的，集群通过阻止客户端查看不同节点上还未同步的数据维持逻辑视图。
 
 
 
@@ -366,31 +509,92 @@ key
 
 ###### 30.BIO，NIO，AIO
 
+![image-20210224114915277](img/image-20210224114915277.png)
+
+![image-20210224114950745](img/image-20210224114950745.png)
+
+![image-20210224115014854](img/image-20210224115014854.png)
+
+
+
 
 
 ###### 31.lock和synchronized的区别
+
+两者区别：
+
+1.首先synchronized是java内置关键字，在jvm层面，Lock是个java类；
+
+2.synchronized无法判断是否获取锁的状态，Lock可以判断是否获取到锁；
+
+3.synchronized会自动释放锁(a 线程执行完同步代码会释放锁 ；b 线程执行过程中发生异常会释放锁)，Lock需在finally中手工释放锁（unlock()方法释放锁），否则容易造成线程死锁；
+
+4.用synchronized关键字的两个线程1和线程2，如果当前线程1获得锁，线程2线程等待。如果线程1阻塞，线程2则会一直等待下去，而Lock锁就不一定会等待下去，如果尝试获取不到锁，线程可以不用一直等待就结束了；
+
+5.synchronized的锁可重入、不可中断、非公平，而Lock锁可重入、可判断、可公平（两者皆可）
+
+6.Lock锁适合大量同步的代码的同步问题，synchronized锁适合代码少量的同步问题。
 
 
 
 ###### 32.，jdk代理和cglib代理区别，实现
 
+JDK 的动态代理只能对实现了接口的目标类进行代理，而不实现接口的类就不能使用 JDK 的动态代理
 
+CGLIB 是针对类来实现代理，当没有实现接口的类需要代理时就需要通过 CGLIB 来实现代理了，他的原理是对指定的目标类生成一个子类，并覆盖其中方法实现增强，但是因为采用的是继承，所以不能对 finall 类进行继承。
 
 ###### 33.tcp三次握手，为什么，两次有什么问题
+
+```
+1. 客户端向服务器发送一个SYN置位的TCP报文，其中包含连接的初始序列号x和一个窗口大小（表示客户端上用来存储从服务器发送来的传入段的缓冲区的大小）。
+2. 服务器收到客户端发送过来的SYN报文后，向客户端发送一个SYN和ACK都置位的TCP报文，其中包含它选择的初始序列号y、对客户端的序列号的确认x+1和一个窗口大
+小（表示服务器上用来存储从客户端发送来的传入段的缓冲区的大小）。
+3. .客户端接收到服务器端返回的SYN+ACK报文后，向服务器端返回一个确认号y+1和序号x+1的ACK报文，一个标准的TCP连接完成。
+
+三次握手改成仅需要两次握手，死锁是可能发生
+考虑计算机A和B之间的通信，假定B给A发送一个连接请求分组，A收到了这个分组，并发送了确认应答分组。按照两次握手的协定，A认为连接已经成功地建立了，可以开始发送数据分组。可是，B在A的应答分组在传输中被丢失的情况下，将不知道A是否已准备好，不知道A建议什么样的序列号，B甚至怀疑A是否收到自己的连接请求分组。在这种情况下，B认为连接还未建立成功，将忽略A发来的任何数据分组，只等待连接确认应答分组。这样就形成了死锁
+```
 
 
 
 ###### 34.https请求过程
 
+一个HTTPS请求实际上包含了两次HTTP传输，可以细分为8步。
+ 1.客户端向服务器发起HTTPS请求，连接到服务器的443端口
+
+2.服务器端有一个密钥对，即公钥和私钥，是用来进行非对称加密使用的，服务器端保存着私钥，不能将其泄露，公钥可以发送给任何人。
+
+3.服务器将自己的公钥发送给客户端。
+
+4.客户端收到服务器端的证书之后，会对证书进行检查，验证其合法性，如果发现发现证书有问题，那么HTTPS传输就无法继续。严格的说，这里应该是验证服务器发送的数字证书的合法性，关于客户端如何验证数字证书的合法性，下文会进行说明。如果公钥合格，那么客户端会生成一个随机值，这个随机值就是用于进行对称加密的密钥，我们将该密钥称之为client key，即客户端密钥，这样在概念上和服务器端的密钥容易进行区分。然后用服务器的公钥对客户端密钥进行非对称加密，这样客户端密钥就变成密文了，至此，HTTPS中的第一次HTTP请求结束。
+
+5.客户端会发起HTTPS中的第二个HTTP请求，将加密之后的客户端密钥发送给服务器。
+
+6.服务器接收到客户端发来的密文之后，会用自己的私钥对其进行非对称解密，解密之后的明文就是客户端密钥，然后用客户端密钥对数据进行对称加密，这样数据就变成了密文。
+
+7.然后服务器将加密后的密文发送给客户端。
+
+8.客户端收到服务器发送来的密文，用客户端密钥对其进行对称解密，得到服务器发送的数据。这样HTTPS中的第二个HTTP请求结束，整个HTTPS传输完成。
+
 
 
 ###### 35.数据库索引分成几类？具体讲一下
 
+Mysql常见的索引有主键索引、普通索引、全文索引、唯一索引
 
+主键就是唯一索引，但是唯一索引不一定是主键，唯一索引可以为空，但是空值只能有一个，主键不能为空。
+普通唯一索引：单个字段上建立唯一索引，需要此字段所在的列上不能有重复的值，属于二级索引。
+复合唯一索引：多个字段上联合建立唯一索引，属于二级索引。
 
 ###### 36.mybatis如果xml和注解配置都有会先用哪个
 
+- **这种方式一定要把类的配置写在 XML 的配置之前。**
 
+因为先解析完 mapper 之后，可以继续解析 xml，解析 xml 时如果判断 mapper 解析过之后则不会重复解析也不会抛错，但是如果先解析 xml，会向Configuration 中注册 Mapper，当之后解析 Mapper 时如果检测到有加载过则会抛出异常并终止程序创建 SqlSessionFactory。
+
+- **不允许对一个方法既XML 配置又注解，这会报错。**
+
+因为在解析每个 sqlmap 的时候会给其生成唯一的 ID，并存入 MapperRegistry 中，这个注册中心本质上是一个 HashMap，且不允许插入已经存在的 key 值，做插入操作时如果检测到已存在同名ID就会报错终止解析。
 
 ###### 37.ConcurrentHashMap如何保证线程安全性?
 
@@ -398,3 +602,17 @@ key
 
 ###### 38.如何判定一个对象是否应该回收。
 
+1. 引用计数法；(无法解决对象循环引用的问题，导致对象无法被回收)
+2. 可达性分析；
+
+###### 39.java异常
+
+![image-20210224100129604](img/image-20210224100129604.png)
+
+###### 40.说下spring中的AOP，以及解释下什么是切面，通知，连接点等。
+
+![img](img/clipboard-1614151296154.png)
+
+​      后两个不常用
+
+![img](img/clipboard-1614151296155.png)

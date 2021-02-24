@@ -1,4 +1,4 @@
-package com.demo;
+package com.interview;
 
 import java.util.ArrayList;
 import java.util.List;

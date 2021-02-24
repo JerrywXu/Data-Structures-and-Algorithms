@@ -1,4 +1,4 @@
-package com.demo;
+package com.interview;
 
 public class SimpleFactoryMode {
     public static void main(String[] args) {
