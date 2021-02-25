@@ -140,6 +140,28 @@ public int[] twoSum(int[] nums, int target) {
 ###### 4.判断链表是否有环
 
 ```java
+ public static void main(String[] args) {
+  Node A = new Node("A");
+  Node B = new Node("B");
+  Node C = new Node("C");
+  Node D = new Node("D");
+  Node E = new Node("E");
+  Node F = new Node("F");
+  A.next = B;
+  B.next = C;
+  C.next = D;
+  D.next = E;
+  E.next = F;
+  print(A);
+ }
+class ListNode {
+        int val;
+        ListNode next;
+
+        ListNode(int x) {
+            val = x;
+        }
+    }
 public class Solution {
     public boolean hasCycle(ListNode head) {
         ListNode fast = head;
@@ -319,7 +341,7 @@ int binarySearch(int[] nums int target){
         else if(nums[mid]<target)
             left=mid+1;
         else if(nums[mid]>target)
-            rigit=mid-1;
+            right=mid-1;
     }
     return -1
 }

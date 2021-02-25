@@ -1,5 +1,7 @@
 ###### 1.红黑树
 
+8自动转红黑树符合 泊松分布hash的离散型最好
+
 ![img](img/clipboard-1614080911857.png)
 
 但是红黑树的性质是每条路径的黑色节点数目相同这个时候你再想想那其他路径的黑色节点数目一定比你现在少一个节点，所以调整起来是非常繁琐的. 插入红节点不需要调整其他路径，如果它的父亲为黑，那么直接插入，如果他的父亲为红那么在该路径上面开始分情况调整. 所以插入节点默认颜色一定要为红.如果为黑调节成本太大了.
@@ -611,8 +613,41 @@ Mysql常见的索引有主键索引、普通索引、全文索引、唯一索引
 
 ###### 40.说下spring中的AOP，以及解释下什么是切面，通知，连接点等。
 
-![img](img/clipboard-1614151296154.png)
+<img src="img/clipboard-1614151296154.png" alt="img" style="zoom:50%;" />
 
 ​      后两个不常用
 
-![img](img/clipboard-1614151296155.png)
+<img src="img/clipboard-1614151296155.png" alt="img" style="zoom:50%;" />
+
+###### 41.java三大拦截器
+
+<img src="img/image-20210225170518772.png" alt="image-20210225170518772" style="zoom:67%;" />
+
+拦截器三个方法分别是:
+
+1.1  preHandle
+
+     预处理回调方法，实现处理器的预处理（如登录检查），第三个参数为响应的处理器（如具体的Controller实现）； 
+返回值：true表示继续流程（如调用下一个拦截器或处理器）；false表示流程中断（如登录检查失败），不会继续调用其他的拦截器或处理器，此时我们需要通过response来产生响应；
+
+1.2 postHandle
+
+     后处理回调方法，实现处理器的后处理（但在渲染视图之前），此时我们可以通过modelAndView（模型和视图对象）对模型数据进行处理或对视图进行处理，modelAndView也可能为null。
+
+1.3 afterCompletion
+
+     整个请求处理完毕回调方法，即在视图渲染完毕时回调，如性能监控中我们可以在此记录结束时间并输出消耗时间，还可以进行一些资源清理，类似于try-catch-finally中的finally，但仅调用处理器执行链中preHandle返回true的拦截器的afterCompletion.
+
+**执行流程**  
+
+首先用户请求到达前端控制器 DispatcherServlet,前端控制器找到处理器映射器,根据请求的方法找到对应的处理器handler,生成拦截器和handler执行顺序的执行链,交给DispatcherServlet,
+
+dispatcherServlet找到对应的处理器适配器进行处理.
+
+   prehandler在请求处理之前执行.该方法的返回值是布尔值 Boolean 类型的，当它返回为 false 时，表示请求结束，后续的 Interceptor 和 Controller 都不会再执行；当返回值为 true 时，就会继续调用下一个 Interceptor 的 preHandle 方法，如果已经是最后一个 Interceptor 的时候，就会是调用当前请求的 Controller 中的方法。
+
+   postHandler 方法在当前请求进行处理之后，也就是在 Controller 中的方法调用之后执行，但是它会在 DispatcherServlet 进行视图返回渲染之前被调用，所以我们可以在这个方法中对 Controller 处理之后的 ModelAndView 对象进行操作。
+
+   afterCompletion该方法将在整个请求结束之后，也就是在 DispatcherServlet 渲染了对应的视图之后执行，这个方法的主要作用是用于进行资源清理的工作。像异常处理资源释放会放在这一步.
+
+  多个拦截器的执行顺序是: 拦截器A的preHandler-->拦截器B的preHandler-->B的postHandler-->A的postHandler-->B的afterCompletion-->A的afterCompletion
