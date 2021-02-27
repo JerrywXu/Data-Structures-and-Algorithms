@@ -220,7 +220,51 @@
 
 \1. 实现一个求整数n的开平方数的函数
 
+```java
+import java.math.BigDecimal;
+ 
+public class Sqrt {
+	private static final double PRECISION = 6;
+	
+	public static double sqrt(double num) throws RuntimeException{
+		if(num < 0){
+			throw new RuntimeException("num should bigger than 0!");
+		}
+		if(num == 0 || num == 1){
+			return num;
+		}
+		
+		return sqrt0(0, num, num);
+	}
+	
+	private static double sqrt0(double low, double high, double num){
+		double mid = (low + high) / 2;
+		
+		BigDecimal bd = new BigDecimal(mid);
+		if(bd.precision() >= PRECISION){
+			return mid;
+		}
+		
+		if((mid * mid) == num){
+			return mid;
+		}else if((mid * mid) < num){
+			return sqrt0(mid, high, num);
+		}else {
+			return sqrt0(low, mid, num);
+		}
+	}
+	
+	public static void main(String[] args) {
+		System.out.println(sqrt(2));
+	}
+}
+```
+
+
+
 \2. 为什么来快手
+
+
 
 \3. 对商业化怎么看
 

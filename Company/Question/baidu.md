@@ -463,6 +463,8 @@ https://blog.csdn.net/zhang5476499/article/details/83796289
 
 https://www.cnblogs.com/Marydon20170307/p/14105005.html
 
+![image-20210226155645553](img/image-20210226155645553.png)
+
 <img src="img/image-20210224105654127.png" alt="image-20210224105654127" style="zoom:67%;" />
 
 ###### mysql的一致性和CAP的一致性有什么区别？
@@ -479,7 +481,7 @@ CAP理论的一致性是保证同样一个数据在所有不同服务器上的�
 
 ###### 26.springboot 循环依赖怎么解决
 
-我现在有一个ServiceA需要调用ServiceB的方法，那么ServiceA就依赖于ServiceB，那在ServiceB中再调用ServiceA的方法，就形成了循环依赖。Spring在初始化bean的时候就不知道先初始化哪个bean就会报错。
+​		我现在有一个ServiceA需要调用ServiceB的方法，那么ServiceA就依赖于ServiceB，那在ServiceB中再调用ServiceA的方法，就形成了循环依赖。Spring在初始化bean的时候就不知道先初始化哪个bean就会报错。
 
 ![image-20210223193732934](img/image-20210223193732934.png)
 
@@ -651,3 +653,68 @@ dispatcherServlet找到对应的处理器适配器进行处理.
    afterCompletion该方法将在整个请求结束之后，也就是在 DispatcherServlet 渲染了对应的视图之后执行，这个方法的主要作用是用于进行资源清理的工作。像异常处理资源释放会放在这一步.
 
   多个拦截器的执行顺序是: 拦截器A的preHandler-->拦截器B的preHandler-->B的postHandler-->A的postHandler-->B的afterCompletion-->A的afterCompletion
+
+42.@responsebody
+
+1.
+
+@responseBody注解的作用是将controller的方法返回的对象通过适当的转换器转换为指定的格式之后，写入到response对象的body区，通常用来返回JSON数据或者是XML
+
+数据，需要注意的呢，在使用此注解之后不会再走试图处理器，而是直接将数据写入到输入流中，他的效果等同于通过response对象输出指定格式的数据。
+
+2、
+
+　　@RequestMapping("/login")
+　　@ResponseBody
+　　public User login(User user){
+　　　　return user;
+　　}
+User字段：userName pwd 那么在前台接收到的数据为：'{"userName":"xxx","pwd":"xxx"}'
+效果等同于如下代码：
+　　@RequestMapping("/login")
+　　public void login(User user, HttpServletResponse response){
+　　　　response.getWriter.write(JSONObject.fromObject(user).toString());
+　　}
+
+```java
+后台 Controller类中对应的方法：
+@RequestMapping("/login.do")
+@ResponseBody
+public Object login(String name, String password, HttpSession session) {
+	user = userService.checkLogin(name, password);
+	session.setAttribute("user", user);
+	return new JsonResult(user);
+}
+ 
+@RequestBody是作用在形参列表上，用于将前台发送过来固定格式的数据【xml格式 或者 json等】封装为对应的 JavaBean 对象，
+封装时使用到的一个对象是系统默认配置的 HttpMessageConverter进行解析，然后封装到形参上。
+如上面的登录后台代码可以改为：
+@RequestMapping("/login.do")
+@ResponseBody
+public Object login(@RequestBody User loginUuser, HttpSession session) {
+	user = userService.checkLogin(loginUser);
+	session.setAttribute("user", user);
+	return new JsonResult(user);
+}
+
+@ResponseBody 表示该方法的返回结果直接写入 HTTP response body 中，一般在异步获取数据时使用【也就是AJAX】。
+```
+
+###### 42.HttpSession 服务端的技术
+
+```
+
+服务器会为每一个用户 创建一个独立的HttpSession
+
+HttpSession原理
+当用户第一次访问Servlet时,服务器端会给用户创建一个独立的Session
+并且生成一个SessionID,这个SessionID在响应浏览器的时候会被装进cookie中,从而被保存到浏览器中
+当用户再一次访问Servlet时,请求中会携带着cookie中的SessionID去访问
+服务器会根据这个SessionID去查看是否有对应的Session对象
+有就拿出来使用;没有就创建一个Session(相当于用户第一次访问)
+
+域的范围:
+    Context域 > Session域 > Request域
+    Session域 只要会话不结束就会存在 但是Session有默认的存活时间(30分钟)
+```
+
