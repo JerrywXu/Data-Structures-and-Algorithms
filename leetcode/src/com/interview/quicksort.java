@@ -1,4 +1,4 @@
-package com.code;
+package com.interview;
 
 public class quicksort {
     public static void main(String[] args) {

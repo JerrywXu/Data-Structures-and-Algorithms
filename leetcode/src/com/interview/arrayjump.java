@@ -1,4 +1,4 @@
-package com.code;
+package com.interview;
 //跳跃游戏
 //2,3,1,1,4
 //3,2,1,0,4
