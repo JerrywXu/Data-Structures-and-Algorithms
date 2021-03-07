@@ -235,11 +235,19 @@ public ListNode mergeTwoLists(ListNode l1, ListNode l2) {
 ###### 7.反转链表
 
 ```java
+class ListNode{
+    int val;
+    ListNode next;
+ 
+    ListNode(int x){
+        val = x;
+    }
+}
 public ListNode reverseList(ListNode head) {
         ListNode prev = null;
         ListNode curr = head;
         while (curr != null) {
-            ListNode next = curr.next;
+            ListNode next = curr.next; //next永远存着curr下一个节点的信息
             curr.next = prev;//改变指针的指向
             prev = curr; //把curr的值赋给prev
             curr = next;
