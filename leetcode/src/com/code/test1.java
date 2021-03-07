@@ -18,5 +18,7 @@ public static class Singleton{
         System.out.println("doSomething");
     }
 }
+
+
 }
 
