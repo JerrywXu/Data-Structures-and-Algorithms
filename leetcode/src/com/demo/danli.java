@@ -1,6 +1,6 @@
-package com.code;
+package com.demo;
 
-public class test1 {
+public class danli {
     public static void main(String[] args) {
       Singleton.getInstance().doSomeSthing();
     }

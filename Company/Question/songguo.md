@@ -909,7 +909,83 @@ MySQL 的基本存储结构是页，大概就是这个样子的：
 - 我们在做数据新增、修改、删除的时候，需要花额外的时间去维护索引；
 - 正因为这些额外的开销，导致索引会降低新增、修改、删除的速度。
 
+###### 44.sychronized 和 reentrantlock 使用场景，不同之处
 
+![image-20210308223015217](img/image-20210308223015217.png)
+
+###### 45.死锁产生的原因
+
+所谓死锁，是指多个进程在运行过程中因争夺资源而造成的一种僵局，当进程处于这种僵持状态时，若无外力作用，它们都将无法再向前推进。 因此我们举个例子来描述，如果此时有一个线程A，按照先锁a再获得锁b的的顺序获得锁，而在此同时又有另外一个线程B，按照先锁b再锁a的顺序获得锁。如下图所示：
+<img src="img/image-20210308222752468.png" alt="image-20210308222752468" style="zoom: 80%;" />
+
+持有锁的资源在等待获取锁
+
+###### 46.我们可以用2*1的小矩形横着或者竖着去覆盖更大的矩形。请问用n个2*1的小矩形无重叠地覆盖一个2*n的大矩形，总共有多少种方法？
+
+<img src="img/image-20210308231026669.png" alt="image-20210308231026669" style="zoom: 80%;" />
+
+```java
+类似于青蛙跳台阶,当n=1时，只有一种横向排列的方式。当n等于二时，2*2有两种选择，横向或者是竖向。当n等于3的时候对于2*3来说,如果选择的是竖向排列，则剩下的就是2*2排列，如果选择的是横向,则对于2*n剩下的则只有1*n的一种选择。
+//1
+ class Solution {
+public:
+    int rectCover(int number) {
+        // 递归
+        /*
+        if(number <= 0)
+        {
+            return 0;
+        }
+        else if(number == 1 || number == 2)
+        {
+            return number;
+        }
+        else
+        {
+            return rectCover(number - 1) + rectCover(number - 2);
+        }
+    }
+    */
+        // 迭代
+        int g = 1, f = 2;
+        if(number <= 0)
+        {
+            return 0;
+        }
+        else if(number == 1 || number == 2)
+        {
+            return number;
+        }
+        else
+        {
+            while(--number)
+            {
+                f = f + g; 
+                g = f - g;
+            }
+            return g;
+        }
+    }
+};
+
+//2
+public class Solution {
+    public int RectCover(int target) {
+        if(target  == 1)
+            return 1;
+        if(target == 2)
+            return 2;
+        int f1 = 1, f2 = 2, f3 = 0;//只是这里初始化的时候是从3开始的
+        for (int i = 3; i <= target; i++) {
+            f3 = f1+ f2;
+            f1 = f2;
+            f2 = f3;
+        }
+        return f3;
+    }
+}
+
+```
 
 
 

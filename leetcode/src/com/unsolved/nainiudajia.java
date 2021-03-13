@@ -1,9 +1,9 @@
-package com.code;
+package com.unsolved;
 
 import java.util.*;
 
 
-public class test2 {
+public class nainiudajia {
 
     /**
      * 代码中的类名、方法名、参数名已经指定，请勿修改，直接返回方法规定的值即可
