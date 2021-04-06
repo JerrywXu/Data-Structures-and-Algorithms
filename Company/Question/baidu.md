@@ -171,6 +171,7 @@ if(minCapacity > oldCapacity) //扩容的条件，数组需要的长度要大于
 当达到核心线程数时，如果还都在忙，那么就会放到blockingQueue阻塞队列；
 如果阻塞队列也放满了，而且核心线程还在忙，那就会去建立非核心线程，如果一直创建，数量达到非核心最大的线程数，就会触发一个拒绝策略
 
+threadPoolExecutor = new ThreadPoolExecutor(10, 10, 1000L, TimeUnit.MILLISECONDS, new ArrayBlockingQueue<Runnable>(10), Executors.defaultThreadFactory(),new ThreadPoolExecutor.CallerRunsPolicy());
 
 //四种创建线程池的方式
     
