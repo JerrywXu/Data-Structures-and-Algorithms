@@ -6,7 +6,8 @@ public class demoshape {
     public static void main(String[] args) {
         Scanner sc=new Scanner(System.in);
         String str=sc.next();
-        String[] arr=str.split(",");
+        String[] arr=str.split("," );
+
         int[] b=new int[arr.length];
         for(int j=0;j<b.length;j++){
             b[j]=Integer.parseInt(arr[j]);
