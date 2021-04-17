@@ -1,8 +1,6 @@
 package com.code;
 
-import java.util.HashSet;
-import java.util.Scanner;
-import java.util.Set;
+import java.util.*;
 
 public class demo1 {
 
@@ -29,4 +27,43 @@ public class demo1 {
         }
         return ans;
     }
+    public boolean repeatedSubstringPattern (String s) {
+        // write code here
+        if(s==null||s.length()<=1){
+            return false;
+        }
+        int length=s.length();
+
+        for(int i=length/2;i>0;i--){
+            if(length%i==0){
+                StringBuilder sb=new StringBuilder();
+                int c=length/i;
+                String temp=s.substring(0,i);
+                for (int j=0;j<c;j++){
+                    sb.append(temp);
+                }
+                if (sb.toString().equals(s)){
+                    return true;
+                }
+            }
+        }
+        return false;
+
+    }
+
+
+    public ArrayList<ArrayList<String>> groupAnagrams (String[] strs) {
+        // write code here
+        Map<String,ArrayList<String>> map=new HashMap<String,ArrayList<String>>();
+        for (String str:strs){
+            char[] array=str.toCharArray();
+            Arrays.sort(array);
+            String key=new String(array);
+            ArrayList<String> list=map.getOrDefault(key,new ArrayList<String>());
+            list.add(str);
+            map.put(key,list);
+        }
+        return new ArrayList<ArrayList<String>>(map.values());
+    }
+
 }
